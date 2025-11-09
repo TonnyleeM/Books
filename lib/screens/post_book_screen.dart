@@ -27,29 +27,26 @@ class _PostBookScreenState extends State<PostBookScreen> {
 
   Future pickImage() async {
     try {
-      final p = ImagePicker();
-      final x = await p.pickImage(
-        source: ImageSource.gallery, 
-        imageQuality: 50, // More aggressive compression
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
         maxWidth: 800,
         maxHeight: 1200,
+        imageQuality: 70,
       );
-      if (x != null && x.path.isNotEmpty) {
-        final file = File(x.path);
-        if (await file.exists()) {
-          setState(() => _image = file);
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Image file not found')),
-            );
-          }
-        }
+      
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
+          const SnackBar(
+            content: Text('Could not pick image. Try again.'),
+            backgroundColor: Colors.orange,
+          ),
         );
       }
     }

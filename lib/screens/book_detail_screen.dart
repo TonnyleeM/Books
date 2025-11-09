@@ -38,6 +38,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -182,52 +183,63 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     if (isMine)
                       Column(
                         children: [
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => EditBookScreen(book: widget.book),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => EditBookScreen(book: widget.book),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.edit, size: 18),
+                                  label: const Text('Edit'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                );
-                              },
-                              icon: const Icon(Icons.edit),
-                              label: const Text(
-                                'Edit Book',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _showSwapOptions(context, auth),
+                                  icon: const Icon(Icons.swap_horiz, size: 18),
+                                  label: const Text('Swap'),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
-                            height: 50,
                             child: OutlinedButton.icon(
                               onPressed: _isDeleting ? null : () => _handleDelete(context, bookProv),
                               icon: _isDeleting
                                   ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
+                                      width: 16,
+                                      height: 16,
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
-                                  : const Icon(Icons.delete_outline),
-                              label: Text(_isDeleting ? 'Deleting...' : 'Delete Book'),
+                                  : const Icon(Icons.delete_outline, size: 18),
+                              label: Text(_isDeleting ? 'Deleting...' : 'Delete'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: theme.colorScheme.error,
                                 side: BorderSide(color: theme.colorScheme.error),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
@@ -235,53 +247,51 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         ],
                       )
                     else
-                      Column(
+                      Row(
                         children: [
                           if (widget.book.status == 'available')
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
+                            Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: _isRequestingSwap
                                     ? null
                                     : () => _handleRequestSwap(context, bookProv, auth),
                                 icon: _isRequestingSwap
                                     ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
+                                        width: 16,
+                                        height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                         ),
                                       )
-                                    : const Icon(Icons.swap_horiz_rounded),
+                                    : const Icon(Icons.swap_horiz, size: 18),
                                 label: Text(_isRequestingSwap ? 'Requesting...' : 'Request Swap'),
                                 style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
+                          if (widget.book.status == 'available') const SizedBox(width: 8),
+                          Expanded(
                             child: OutlinedButton.icon(
                               onPressed: _isOpeningChat
                                   ? null
                                   : () => _handleChat(context, firestore, auth),
                               icon: _isOpeningChat
                                   ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
+                                      width: 16,
+                                      height: 16,
                                       child: CircularProgressIndicator(strokeWidth: 2),
                                     )
-                                  : const Icon(Icons.chat_bubble_outline_rounded),
+                                  : const Icon(Icons.chat_bubble_outline, size: 18),
                               label: Text(_isOpeningChat ? 'Opening...' : 'Chat'),
                               style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
@@ -504,6 +514,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     return '${sorted[0]}_${sorted[1]}';
   }
 
+  void _showSwapOptions(BuildContext context, AuthProvider auth) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _SwapOptionsSheet(book: widget.book, auth: auth),
+    );
+  }
+
   Color _getConditionColor(String condition, ThemeData theme) {
     switch (condition.toLowerCase()) {
       case 'new':
@@ -557,6 +577,239 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         return Icons.swap_horiz;
       default:
         return Icons.info_outline;
+    }
+  }
+}
+
+class _SwapOptionsSheet extends StatefulWidget {
+  final Book book;
+  final AuthProvider auth;
+
+  const _SwapOptionsSheet({required this.book, required this.auth});
+
+  @override
+  State<_SwapOptionsSheet> createState() => _SwapOptionsSheetState();
+}
+
+class _SwapOptionsSheetState extends State<_SwapOptionsSheet> {
+  final _firestore = FirestoreService();
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Swap "${widget.book.title}"',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Choose who you want to swap with:',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 20),
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _firestore.streamReceivedSwapOffers(widget.auth.user?.uid ?? ''),
+            builder: (context, snapshot) {
+              final offers = snapshot.data ?? [];
+              
+              if (offers.isEmpty) {
+                return Column(
+                  children: [
+                    Icon(
+                      Icons.swap_horiz,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No swap requests yet',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Users need to request swaps first',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              
+              return Column(
+                children: [
+                  ...offers.map((offer) => _buildOfferTile(offer, theme)),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfferTile(Map<String, dynamic> offer, ThemeData theme) {
+    return FutureBuilder<String?>(
+      future: _firestore.getUserName(offer['from'] ?? ''),
+      builder: (context, snapshot) {
+        final userName = snapshot.data ?? 'User';
+        final status = offer['state'] ?? 'pending';
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: theme.colorScheme.primary,
+                child: Text(
+                  userName[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Status: ${status.toUpperCase()}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (status == 'pending')
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () => _handleDecline(offer),
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      tooltip: 'Decline',
+                    ),
+                    IconButton(
+                      onPressed: () => _handleAccept(offer),
+                      icon: const Icon(Icons.check, color: Colors.green),
+                      tooltip: 'Accept',
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleAccept(Map<String, dynamic> offer) async {
+    setState(() => _isLoading = true);
+    try {
+      await _firestore.acceptSwapOffer(offer['id'], offer['bookId']);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Swap accepted!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleDecline(Map<String, dynamic> offer) async {
+    setState(() => _isLoading = true);
+    try {
+      await _firestore.declineSwapOffer(offer['id'], offer['bookId']);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Swap declined'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

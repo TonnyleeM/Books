@@ -85,27 +85,43 @@ class _ChatScreenState extends State<ChatScreen> {
                       final chats = snapshot.data ?? [];
                       
                       if (chats.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.chat_bubble_outline,
                                 size: 64,
                                 color: Colors.grey,
                               ),
-                              SizedBox(height: 16),
-                              Text(
+                              const SizedBox(height: 16),
+                              const Text(
                                 'No chats yet',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Start chatting with book owners!',
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Chats are created when you:',
                                 style: TextStyle(color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                '• Request a swap on a book',
+                                style: TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
+                              const Text(
+                                '• Click "Chat" on a book detail',
+                                style: TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(context, '/browse');
+                                },
+                                child: const Text('Browse Books'),
                               ),
                             ],
                           ),
