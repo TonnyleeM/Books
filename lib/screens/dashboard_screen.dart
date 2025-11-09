@@ -113,13 +113,19 @@ class _DashboardScreenState extends State<DashboardScreen>
                   StreamBuilder<List<Book>>(
                     stream: bookProvider.myBooks(auth.user?.uid ?? ''),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SliverToBoxAdapter(
-                          child: Center(child: CircularProgressIndicator()),
+                          child: SizedBox.shrink(),
                         );
                       }
                       
-                      final books = snapshot.data!;
+                      if (snapshot.hasError) {
+                        return const SliverToBoxAdapter(
+                          child: SizedBox.shrink(),
+                        );
+                      }
+                      
+                      final books = snapshot.data ?? [];
                       if (books.isEmpty) {
                         return SliverToBoxAdapter(
                           child: Padding(

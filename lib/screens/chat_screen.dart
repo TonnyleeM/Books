@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/firestore_service.dart';
+import '../models/message.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -8,29 +12,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<Map<String, dynamic>> _mockChats = [
-    {
-      'id': 'chat1',
-      'otherUserName': 'Alice Johnson',
-      'lastMessage': 'Is the book still available?',
-      'timestamp': DateTime.now().subtract(const Duration(minutes: 30)),
-      'unread': true,
-    },
-    {
-      'id': 'chat2', 
-      'otherUserName': 'Bob Smith',
-      'lastMessage': 'Thanks for the book swap!',
-      'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
-      'unread': false,
-    },
-    {
-      'id': 'chat3',
-      'otherUserName': 'Carol Davis',
-      'lastMessage': 'When can we meet for the exchange?',
-      'timestamp': DateTime.now().subtract(const Duration(days: 1)),
-      'unread': false,
-    },
-  ];
+  final _firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +22,22 @@ class _ChatScreenState extends State<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // Header with back button
             Padding(
               padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Text(
                     'Messages',
                     style: theme.textTheme.displayMedium?.copyWith(
@@ -68,12 +61,67 @@ class _ChatScreenState extends State<ChatScreen> {
             
             // Chat List
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _mockChats.length,
-                itemBuilder: (context, index) {
-                  final chat = _mockChats[index];
-                  return _buildChatTile(chat, theme);
+              child: Consumer<AuthProvider>(
+                builder: (context, auth, child) {
+                  if (auth.user == null) {
+                    return const Center(
+                      child: Text('Please sign in to view chats'),
+                    );
+                  }
+                  
+                  return StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: _firestoreService.streamChats(auth.user!.uid),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text('Error: ${snapshot.error}'),
+                        );
+                      }
+                      
+                      final chats = snapshot.data ?? [];
+                      
+                      if (chats.isEmpty) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline,
+                                size: 64,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'No chats yet',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Start chatting with book owners!',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: chats.length,
+                        itemBuilder: (context, index) {
+                          final chat = chats[index];
+                          return _buildChatTile(chat, theme, auth.user!.uid);
+                        },
+                      );
+                    },
+                  );
                 },
               ),
             ),
@@ -83,93 +131,108 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildChatTile(Map<String, dynamic> chat, ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 24,
-          backgroundColor: theme.colorScheme.primary,
-          child: Text(
-            chat['otherUserName'][0].toUpperCase(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                chat['otherUserName'],
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            if (chat['unread'] == true)
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  chat['lastMessage'],
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Text(
-                _formatTime(chat['timestamp']),
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 12,
-                ),
+  Widget _buildChatTile(Map<String, dynamic> chat, ThemeData theme, String currentUserId) {
+    final participants = List<String>.from(chat['participants'] ?? []);
+    final otherUserId = participants.firstWhere(
+      (id) => id != currentUserId,
+      orElse: () => 'Unknown',
+    );
+    
+    return FutureBuilder<String?>(
+      future: _firestoreService.getUserName(otherUserId),
+      builder: (context, snapshot) {
+        final displayName = snapshot.data ?? 'User';
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-        ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatDetailScreen(
-                chatId: chat['id'],
-                otherUserName: chat['otherUserName'],
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: CircleAvatar(
+              radius: 24,
+              backgroundColor: theme.colorScheme.primary,
+              child: Text(
+                displayName[0].toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
               ),
             ),
-          );
-        },
-      ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                if (chat['unread'] == true)
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      chat['lastMessage'] ?? 'No messages yet',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (chat['lastMessageTime'] != null)
+                    Text(
+                      _formatTime(chat['lastMessageTime'].toDate()),
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatDetailScreen(
+                    chatId: chat['id'],
+                    otherUserName: displayName,
+                    otherUserId: otherUserId,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -205,50 +268,59 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final _messageController = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'text': 'Hi! Is your book still available?',
-      'isMe': false,
-      'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
-    },
-    {
-      'text': 'Yes, it is! Are you interested in swapping?',
-      'isMe': true,
-      'timestamp': DateTime.now().subtract(const Duration(hours: 1, minutes: 30)),
-    },
-    {
-      'text': 'Absolutely! What book are you looking for?',
-      'isMe': false,
-      'timestamp': DateTime.now().subtract(const Duration(minutes: 45)),
-    },
-  ];
+  final _scrollController = ScrollController();
+  final _firestoreService = FirestoreService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty || _isLoading) return;
     
-    setState(() {
-      _messages.add({
-        'text': _messageController.text.trim(),
-        'isMe': true,
-        'timestamp': DateTime.now(),
-      });
-    });
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (auth.user == null) return;
     
+    setState(() => _isLoading = true);
     _messageController.clear();
+    
+    try {
+      await _firestoreService.sendMessage(
+        chatId: widget.chatId,
+        senderId: auth.user!.uid,
+        text: text,
+      );
+      
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send message: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Row(
           children: [
             CircleAvatar(
@@ -271,43 +343,67 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              reverse: true,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[_messages.length - 1 - index];
-                final isMe = message['isMe'];
+            child: StreamBuilder<List<Message>>(
+              stream: _firestoreService.getMessages(widget.chatId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Align(
-                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.75,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isMe
-                            ? theme.colorScheme.primary
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(16),
-                          topRight: const Radius.circular(16),
-                          bottomLeft: Radius.circular(isMe ? 16 : 4),
-                          bottomRight: Radius.circular(isMe ? 4 : 16),
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error: ${snapshot.error}'),
+                  );
+                }
+                
+                final messages = snapshot.data ?? [];
+                
+                if (messages.isEmpty) {
+                  return const Center(
+                    child: Text('No messages yet. Start the conversation!'),
+                  );
+                }
+                
+                return ListView.builder(
+                  controller: _scrollController,
+                  reverse: true,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[messages.length - 1 - index];
+                    final isMe = message.senderId == auth.user?.uid;
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.75,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isMe
+                                ? theme.colorScheme.primary
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(16),
+                              topRight: const Radius.circular(16),
+                              bottomLeft: Radius.circular(isMe ? 16 : 4),
+                              bottomRight: Radius.circular(isMe ? 4 : 16),
+                            ),
+                          ),
+                          child: Text(
+                            message.text,
+                            style: TextStyle(
+                              color: isMe ? Colors.white : Colors.black87,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        message['text'],
-                        style: TextStyle(
-                          color: isMe ? Colors.white : Colors.black87,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
             ),
@@ -353,11 +449,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      onPressed: _sendMessage,
-                      icon: const Icon(
-                        Icons.send,
-                        color: Colors.white,
-                      ),
+                      onPressed: _isLoading ? null : _sendMessage,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                            ),
                     ),
                   ),
                 ],

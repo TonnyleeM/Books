@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/book.dart';
+import '../models/message.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -160,7 +161,11 @@ class FirestoreService {
         });
   }
 
-  Future<void> sendMessage(String chatId, String senderId, String text) async {
+  Future<void> sendMessage({
+    required String chatId,
+    required String senderId,
+    required String text,
+  }) async {
     try {
       // Add message to subcollection
       await _db.collection('chats').doc(chatId).collection('messages').add({
@@ -177,6 +182,28 @@ class FirestoreService {
     } catch (e) {
       throw Exception('Failed to send message: $e');
     }
+  }
+
+  Stream<List<Message>> getMessages(String chatId) {
+    return _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snap) {
+          try {
+            return snap.docs.map((d) {
+              try {
+                return Message.fromMap(d.data(), d.id);
+              } catch (e) {
+                return null;
+              }
+            }).whereType<Message>().toList();
+          } catch (e) {
+            return <Message>[];
+          }
+        });
   }
 
   String _getChatId(String uid1, String uid2) {
