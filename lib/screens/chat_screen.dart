@@ -190,11 +190,13 @@ class _ChatScreenState extends State<ChatScreen> {
 class ChatDetailScreen extends StatefulWidget {
   final String chatId;
   final String otherUserName;
+  final String? otherUserId;
 
   const ChatDetailScreen({
     super.key,
     required this.chatId,
     required this.otherUserName,
+    this.otherUserId,
   });
 
   @override
