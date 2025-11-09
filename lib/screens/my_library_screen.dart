@@ -164,25 +164,23 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.error_outline_rounded,
+                  Icons.library_books_outlined,
                   size: 64,
-                  color: theme.colorScheme.error,
+                  color: theme.colorScheme.primary.withOpacity(0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Something went wrong',
+                  'Loading your library...',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Please try again later',
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pushNamed(context, '/add-book'),
+                  child: const Text('Add Your First Book'),
                 ),
               ],
             ),
