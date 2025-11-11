@@ -59,6 +59,10 @@ class StorageService {
     }
   }
 
+  Future<String> uploadBookImageWeb(Uint8List imageBytes, String bookId) async {
+    return await uploadWebImage(imageBytes, bookId);
+  }
+
   Future<String> uploadBookImage(File file, String bookId) async {
     // Check if file exists
     if (!await file.exists()) {

@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../services/firestore_service.dart';
 import 'edit_book_screen.dart';
 import 'chat_screen.dart' show ChatDetailScreen;
+import 'swap_selection_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final Book book;
@@ -21,6 +22,25 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   bool _isRequestingSwap = false;
   bool _isOpeningChat = false;
   bool _isDeleting = false;
+  bool _isSaved = false;
+  bool _isLoadingSave = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfSaved();
+  }
+
+  Future<void> _checkIfSaved() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final bookProv = Provider.of<BookProvider>(context, listen: false);
+    if (auth.user != null) {
+      final saved = await bookProv.isBookSaved(auth.user!.uid, widget.book.id);
+      if (mounted) {
+        setState(() => _isSaved = saved);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +55,23 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       appBar: AppBar(
         title: const Text('Book Details'),
         elevation: 0,
+        actions: [
+          if (!isMine && auth.user != null)
+            IconButton(
+              onPressed: _isLoadingSave ? null : () => _toggleSave(bookProv, auth),
+              icon: _isLoadingSave
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                      color: _isSaved ? theme.colorScheme.primary : null,
+                    ),
+              tooltip: _isSaved ? 'Remove from saved' : 'Save book',
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -252,20 +289,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           if (widget.book.status == 'available')
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: _isRequestingSwap
-                                    ? null
-                                    : () => _handleRequestSwap(context, bookProv, auth),
-                                icon: _isRequestingSwap
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : const Icon(Icons.swap_horiz, size: 18),
-                                label: Text(_isRequestingSwap ? 'Requesting...' : 'Request Swap'),
+                                onPressed: () => _navigateToSwapSelection(context),
+                                icon: const Icon(Icons.swap_horiz, size: 18),
+                                label: const Text('Request Swap'),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
@@ -398,43 +424,56 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     }
   }
 
-  Future<void> _handleRequestSwap(
-      BuildContext context, BookProvider bookProv, AuthProvider auth) async {
+  void _navigateToSwapSelection(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     if (auth.user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please sign in to request a swap'),
           backgroundColor: Colors.red,
-          padding: EdgeInsets.all(16),
         ),
       );
       return;
     }
 
-    setState(() => _isRequestingSwap = true);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SwapSelectionScreen(targetBook: widget.book),
+      ),
+    );
+  }
+
+  Future<void> _toggleSave(BookProvider bookProv, AuthProvider auth) async {
+    if (auth.user == null) return;
+    
+    setState(() => _isLoadingSave = true);
     try {
-      await bookProv.createSwapOffer(
-        bookId: widget.book.id,
-        fromUid: auth.user!.uid,
-        toUid: widget.book.ownerId,
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Swap requested!'),
-              ],
+      if (_isSaved) {
+        await bookProv.unsaveBook(auth.user!.uid, widget.book.id);
+        setState(() => _isSaved = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Book removed from saved'),
+              backgroundColor: Colors.orange,
             ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        }
+      } else {
+        await bookProv.saveBook(auth.user!.uid, widget.book.id);
+        setState(() => _isSaved = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Book saved!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
@@ -444,7 +483,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isRequestingSwap = false);
+        setState(() => _isLoadingSave = false);
       }
     }
   }

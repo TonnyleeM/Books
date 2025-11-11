@@ -351,4 +351,119 @@ class FirestoreService {
           }
         });
   }
+
+  // Saved books functionality
+  Future<void> saveBook(String userId, String bookId) async {
+    await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).set({
+      'bookId': bookId,
+      'savedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unsaveBook(String userId, String bookId) async {
+    await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).delete();
+  }
+
+  Future<bool> isBookSaved(String userId, String bookId) async {
+    final doc = await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).get();
+    return doc.exists;
+  }
+
+  Stream<List<Book>> streamSavedBooks(String userId) {
+    return _db
+        .collection('users')
+        .doc(userId)
+        .collection('savedBooks')
+        .snapshots()
+        .asyncMap((savedSnapshot) async {
+          final savedBookIds = savedSnapshot.docs.map((doc) => doc.data()['bookId'] as String).toList();
+          
+          if (savedBookIds.isEmpty) {
+            return <Book>[];
+          }
+          
+          final books = <Book>[];
+          for (final bookId in savedBookIds) {
+            try {
+              final bookDoc = await _db.collection('books').doc(bookId).get();
+              if (bookDoc.exists) {
+                books.add(Book.fromDoc(bookDoc));
+              }
+            } catch (e) {
+              // Skip invalid books
+            }
+          }
+          
+          return books;
+        });
+  }
+
+  // Swap request with user's own book
+  Future<void> createSwapRequest({
+    required String requesterId,
+    required String requesterBookId,
+    required String targetBookId,
+    required String targetOwnerId,
+  }) async {
+    final swapRef = _db.collection('swapRequests').doc();
+    await swapRef.set({
+      'requesterId': requesterId,
+      'requesterBookId': requesterBookId,
+      'targetBookId': targetBookId,
+      'targetOwnerId': targetOwnerId,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamPendingSwapRequests(String userId) {
+    return _db
+        .collection('swapRequests')
+        .where('targetOwnerId', isEqualTo: userId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snap) {
+          return snap.docs.map((d) {
+            final data = d.data();
+            return {
+              'id': d.id,
+              ...data,
+            };
+          }).toList();
+        });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamCompletedSwaps(String userId) {
+    return _db
+        .collection('swapRequests')
+        .where('status', isEqualTo: 'completed')
+        .snapshots()
+        .asyncMap((snap) async {
+          final swaps = <Map<String, dynamic>>[];
+          for (final doc in snap.docs) {
+            final data = doc.data();
+            if (data['requesterId'] == userId || data['targetOwnerId'] == userId) {
+              swaps.add({
+                'id': doc.id,
+                ...data,
+              });
+            }
+          }
+          return swaps;
+        });
+  }
+
+  Future<void> acceptSwapRequest(String swapRequestId) async {
+    await _db.collection('swapRequests').doc(swapRequestId).update({
+      'status': 'completed',
+      'completedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> declineSwapRequest(String swapRequestId) async {
+    await _db.collection('swapRequests').doc(swapRequestId).update({
+      'status': 'declined',
+      'declinedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }

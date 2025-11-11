@@ -27,6 +27,21 @@ class BookProvider extends ChangeNotifier {
     }
     
     final id = const Uuid().v4();
+    String imageUrl = '';
+    
+    // Upload image if provided
+    if (image != null || webImage != null) {
+      try {
+        if (image != null) {
+          imageUrl = await _storage.uploadBookImage(image, id);
+        } else if (webImage != null) {
+          imageUrl = await _storage.uploadBookImageWeb(webImage, id);
+        }
+      } catch (e) {
+        // Continue without image if upload fails
+        imageUrl = '';
+      }
+    }
     
     final book = Book(
       id: id,
@@ -34,7 +49,7 @@ class BookProvider extends ChangeNotifier {
       title: title.trim(),
       author: author.trim(),
       condition: condition.trim(),
-      imageUrl: '',
+      imageUrl: imageUrl,
       status: 'available',
     );
     
@@ -90,6 +105,51 @@ class BookProvider extends ChangeNotifier {
       required String fromUid,
       required String toUid}) async {
     await _db.createSwapOffer(bookId: bookId, fromUid: fromUid, toUid: toUid);
+    notifyListeners();
+  }
+
+  Future<void> saveBook(String userId, String bookId) async {
+    await _db.saveBook(userId, bookId);
+    notifyListeners();
+  }
+
+  Future<void> unsaveBook(String userId, String bookId) async {
+    await _db.unsaveBook(userId, bookId);
+    notifyListeners();
+  }
+
+  Stream<List<Book>> savedBooks(String userId) => _db.streamSavedBooks(userId);
+
+  Future<bool> isBookSaved(String userId, String bookId) => _db.isBookSaved(userId, bookId);
+
+  Future<void> createSwapRequest({
+    required String requesterId,
+    required String requesterBookId,
+    required String targetBookId,
+    required String targetOwnerId,
+  }) async {
+    await _db.createSwapRequest(
+      requesterId: requesterId,
+      requesterBookId: requesterBookId,
+      targetBookId: targetBookId,
+      targetOwnerId: targetOwnerId,
+    );
+    notifyListeners();
+  }
+
+  Stream<List<Map<String, dynamic>>> pendingSwapRequests(String userId) => 
+      _db.streamPendingSwapRequests(userId);
+
+  Stream<List<Map<String, dynamic>>> completedSwaps(String userId) => 
+      _db.streamCompletedSwaps(userId);
+
+  Future<void> acceptSwapRequest(String swapRequestId) async {
+    await _db.acceptSwapRequest(swapRequestId);
+    notifyListeners();
+  }
+
+  Future<void> declineSwapRequest(String swapRequestId) async {
+    await _db.declineSwapRequest(swapRequestId);
     notifyListeners();
   }
 }

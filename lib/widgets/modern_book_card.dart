@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 
@@ -57,13 +58,21 @@ class ModernBookCard extends StatelessWidget {
                 ),
                 child: book.imageUrl.isNotEmpty
                     ? ClipRRect(
-                        child: Image.network(
-                          book.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildPlaceholderImage(theme);
-                          },
-                        ),
+                        child: book.imageUrl.startsWith('data:image')
+                            ? Image.memory(
+                                base64Decode(book.imageUrl.split(',')[1]),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildPlaceholderImage(theme);
+                                },
+                              )
+                            : Image.network(
+                                book.imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildPlaceholderImage(theme);
+                                },
+                              ),
                       )
                     : _buildPlaceholderImage(theme),
               ),
