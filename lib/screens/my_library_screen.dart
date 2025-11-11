@@ -4,6 +4,7 @@ import '../providers/book_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/book.dart';
 import '../widgets/modern_book_card.dart';
+import 'swap_selection_screen.dart';
 
 class MyLibraryScreen extends StatefulWidget {
   const MyLibraryScreen({super.key});
@@ -19,7 +20,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -129,9 +130,11 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
                   fontSize: 16,
                 ),
                 tabs: const [
-                  Tab(text: 'Available'),
+                  Tab(text: 'My Books'),
+                  Tab(text: 'Saved'),
                   Tab(text: 'Pending'),
                   Tab(text: 'Swapped'),
+                  Tab(text: 'Swaps'),
                 ],
               ),
             ),
@@ -140,9 +143,11 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildBooksList('available', auth, bookProvider, theme),
+            _buildMyBooksList(auth, bookProvider, theme),
+            _buildSavedBooksList(auth, bookProvider, theme),
             _buildBooksList('pending', auth, bookProvider, theme),
             _buildBooksList('swapped', auth, bookProvider, theme),
+            _buildSwapRequestsList(auth, bookProvider, theme),
           ],
         ),
       ),
@@ -305,5 +310,200 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
       default:
         return '';
     }
+  }
+
+  Widget _buildMyBooksList(AuthProvider auth, BookProvider bookProvider, ThemeData theme) {
+    return StreamBuilder<List<Book>>(
+      stream: bookProvider.myBooks(auth.user?.uid ?? ''),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+                const SizedBox(height: 16),
+                Text('Error loading books', style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface)),
+              ],
+            ),
+          );
+        }
+
+        final books = snapshot.data ?? [];
+        if (books.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.library_add_outlined, size: 80, color: theme.colorScheme.primary.withOpacity(0.5)),
+                const SizedBox(height: 24),
+                Text('No Books Yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                const SizedBox(height: 8),
+                Text('Add your first book to get started', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/add-book'),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add Book'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: books.length,
+          itemBuilder: (context, index) {
+            final book = books[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ModernBookCard(
+                book: book,
+                onTap: () => Navigator.pushNamed(context, '/book-detail', arguments: book),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSavedBooksList(AuthProvider auth, BookProvider bookProvider, ThemeData theme) {
+    return StreamBuilder<List<Book>>(
+      stream: bookProvider.savedBooks(auth.user?.uid ?? ''),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final books = snapshot.data ?? [];
+        if (books.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.bookmark_border, size: 80, color: theme.colorScheme.primary.withOpacity(0.5)),
+                const SizedBox(height: 24),
+                Text('No Saved Books', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                const SizedBox(height: 8),
+                Text('Books you save will appear here', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: books.length,
+          itemBuilder: (context, index) {
+            final book = books[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Card(
+                child: ModernBookCard(
+                  book: book,
+                  showOwner: true,
+                  onTap: () => Navigator.pushNamed(context, '/book-detail', arguments: book),
+                  trailing: ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/swap-selection', arguments: book),
+                    icon: const Icon(Icons.swap_horiz, size: 16),
+                    label: const Text('Swap'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSwapRequestsList(AuthProvider auth, BookProvider bookProvider, ThemeData theme) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: bookProvider.pendingSwapRequests(auth.user?.uid ?? ''),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final requests = snapshot.data ?? [];
+        if (requests.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.swap_horiz, size: 80, color: theme.colorScheme.primary.withOpacity(0.5)),
+                const SizedBox(height: 24),
+                Text('No Swap Requests', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                const SizedBox(height: 8),
+                Text('Incoming swap requests will appear here', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: requests.length,
+          itemBuilder: (context, index) {
+            final request = requests[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Swap Request', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                    const SizedBox(height: 8),
+                    Text('Someone wants to swap with your book', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () async {
+                              await bookProvider.declineSwapRequest(request['id']);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Swap declined'), backgroundColor: Colors.orange),
+                                );
+                              }
+                            },
+                            child: const Text('Decline'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              await bookProvider.acceptSwapRequest(request['id']);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Swap accepted!'), backgroundColor: Colors.green),
+                                );
+                              }
+                            },
+                            child: const Text('Accept'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

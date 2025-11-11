@@ -241,12 +241,8 @@ class _PostBookScreenState extends State<PostBookScreen> {
                       if (context.mounted) {
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              (_image != null || _webImage != null)
-                                  ? 'Book posted successfully!'
-                                  : 'Book posted successfully! (Image upload skipped)',
-                            ),
+                          const SnackBar(
+                            content: Text('Book posted successfully!'),
                             backgroundColor: Colors.green,
                           ),
                         );

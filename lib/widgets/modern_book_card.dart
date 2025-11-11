@@ -6,12 +6,14 @@ class ModernBookCard extends StatelessWidget {
   final Book book;
   final VoidCallback onTap;
   final bool showOwner;
+  final Widget? trailing;
 
   const ModernBookCard({
     super.key,
     required this.book,
     required this.onTap,
     this.showOwner = false,
+    this.trailing,
   });
 
   @override
@@ -174,10 +176,10 @@ class ModernBookCard extends StatelessWidget {
                 ),
               ),
               
-              // Arrow Icon
+              // Trailing widget or arrow icon
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
-                child: Icon(
+                child: trailing ?? Icon(
                   Icons.arrow_forward_ios_rounded,
                   color: theme.colorScheme.primary.withOpacity(0.5),
                   size: 18,
