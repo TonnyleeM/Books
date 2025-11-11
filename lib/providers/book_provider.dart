@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/firestore_service.dart';
@@ -19,14 +20,24 @@ class BookProvider extends ChangeNotifier {
     required String author,
     required String condition,
     File? image,
+    Uint8List? webImage,
   }) async {
+    // Validate required fields
+    if (ownerId.isEmpty || title.isEmpty || author.isEmpty) {
+      throw Exception('Missing required fields');
+    }
+    
     final id = const Uuid().v4();
     String imageUrl = '';
     
     // Upload image if provided
-    if (image != null) {
+    if (image != null || webImage != null) {
       try {
-        imageUrl = await _storage.uploadBookImage(image, id);
+        if (webImage != null) {
+          imageUrl = await _storage.uploadWebImage(webImage, id);
+        } else if (image != null) {
+          imageUrl = await _storage.uploadBookImage(image, id);
+        }
         // If imageUrl is still empty, something went wrong but we'll continue without image
         if (imageUrl.isEmpty) {
           imageUrl = '';
@@ -53,6 +64,8 @@ class BookProvider extends ChangeNotifier {
       await _db.createBook(book);
     } catch (e) {
       // Re-throw Firestore errors so UI can show them
+      print('Error creating book: $e');
+      print('Book data: ${book.toMap()}');
       throw Exception('Failed to create book: $e');
     }
   }

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/book_globe_logo.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -56,33 +57,9 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: [
                   const SizedBox(height: 40),
                   
-                  // Logo with gradient background
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.secondary,
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.eco_rounded,
-                      size: 60,
-                      color: Colors.white,
-                    ),
+                  // Circular Book Globe Logo
+                  const Center(
+                    child: BookGlobeLogo(size: 120),
                   ),
                   const SizedBox(height: 32),
                   

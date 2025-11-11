@@ -66,7 +66,7 @@ class FirestoreService {
   }
 
   Future<void> createBook(Book book) async {
-    await _db.collection('books').add(book.toMap());
+    await _db.collection('books').doc(book.id).set(book.toMap());
   }
 
   Future<void> updateBook(String id, Map<String, dynamic> data) async {
@@ -330,5 +330,25 @@ class FirestoreService {
     } catch (e) {
       throw Exception('Failed to delete chat: $e');
     }
+  }
+
+  Stream<List<Map<String, dynamic>>> streamAllUsers() {
+    return _db
+        .collection('users')
+        .snapshots()
+        .map((snap) {
+          try {
+            return snap.docs.map((d) {
+              final data = d.data();
+              return {
+                'id': d.id,
+                'name': data['name'] ?? 'User',
+                'createdAt': data['createdAt'],
+              };
+            }).toList();
+          } catch (e) {
+            return <Map<String, dynamic>>[];
+          }
+        });
   }
 }

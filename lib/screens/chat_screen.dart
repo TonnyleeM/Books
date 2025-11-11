@@ -104,24 +104,30 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                               const SizedBox(height: 8),
                               const Text(
-                                'Chats are created when you:',
+                                'Connect with other book lovers!',
                                 style: TextStyle(color: Colors.grey),
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                '• Request a swap on a book',
-                                style: TextStyle(color: Colors.grey, fontSize: 14),
-                              ),
-                              const Text(
-                                '• Click "Chat" on a book detail',
-                                style: TextStyle(color: Colors.grey, fontSize: 14),
-                              ),
                               const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/browse');
-                                },
-                                child: const Text('Browse Books'),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/browse');
+                                    },
+                                    child: const Text('Browse Books'),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      _showAllUsersDialog(context, auth.user!.uid);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: theme.colorScheme.secondary,
+                                    ),
+                                    child: const Text('Find Users'),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -263,6 +269,122 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       return '${difference.inDays}d';
     }
+  }
+
+  void _showAllUsersDialog(BuildContext context, String currentUserId) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 400,
+          height: 500,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'Connect with Users',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: _firestoreService.streamAllUsers(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final users = (snapshot.data ?? [])
+                        .where((user) => user['id'] != currentUserId)
+                        .toList();
+                    
+                    if (users.isEmpty) {
+                      return const Center(
+                        child: Text('No other users found'),
+                      );
+                    }
+                    
+                    return ListView.builder(
+                      itemCount: users.length,
+                      itemBuilder: (context, index) {
+                        final user = users[index];
+                        final userName = user['name'] ?? 'User';
+                        
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            child: Text(
+                              userName[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          title: Text(userName),
+                          subtitle: Text('Tap to start chatting'),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _startChatWithUser(context, currentUserId, user['id'], userName);
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startChatWithUser(BuildContext context, String currentUserId, String otherUserId, String otherUserName) async {
+    try {
+      final chatId = _getChatId(currentUserId, otherUserId);
+      
+      // Ensure chat exists
+      await _firestoreService.ensureChatExists(
+        chatId: chatId,
+        userId1: currentUserId,
+        userId2: otherUserId,
+        bookId: 'general', // General chat, not book-specific
+      );
+      
+      // Navigate to chat
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatDetailScreen(
+            chatId: chatId,
+            otherUserName: otherUserName,
+            otherUserId: otherUserId,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start chat: $e')),
+      );
+    }
+  }
+
+  String _getChatId(String uid1, String uid2) {
+    final sorted = [uid1, uid2]..sort();
+    return '${sorted[0]}_${sorted[1]}';
   }
 }
 

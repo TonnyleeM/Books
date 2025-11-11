@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +18,7 @@ class _PostBookScreenState extends State<PostBookScreen> {
   final _author = TextEditingController();
   String condition = 'Used';
   File? _image;
+  Uint8List? _webImage;
   bool _isPosting = false;
 
   @override
@@ -36,9 +39,18 @@ class _PostBookScreenState extends State<PostBookScreen> {
       );
       
       if (pickedFile != null) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
+        if (kIsWeb) {
+          final bytes = await pickedFile.readAsBytes();
+          setState(() {
+            _webImage = bytes;
+            _image = null;
+          });
+        } else {
+          setState(() {
+            _image = File(pickedFile.path);
+            _webImage = null;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -126,7 +138,7 @@ class _PostBookScreenState extends State<PostBookScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              _image == null
+              (_image == null && _webImage == null)
                   ? Container(
                       height: 200,
                       decoration: BoxDecoration(
@@ -162,12 +174,27 @@ class _PostBookScreenState extends State<PostBookScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _image!,
-                            height: 200,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                          child: kIsWeb && _webImage != null
+                              ? Image.memory(
+                                  _webImage!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                )
+                              : _image != null
+                                  ? Image.file(
+                                      _image!,
+                                      height: 200,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(
+                                      height: 200,
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                        child: Text('No image selected'),
+                                      ),
+                                    ),
                         ),
                         Positioned(
                           top: 8,
@@ -177,7 +204,10 @@ class _PostBookScreenState extends State<PostBookScreen> {
                             borderRadius: BorderRadius.circular(20),
                             child: IconButton(
                               icon: const Icon(Icons.close, color: Colors.white),
-                              onPressed: () => setState(() => _image = null),
+                              onPressed: () => setState(() {
+                                _image = null;
+                                _webImage = null;
+                              }),
                             ),
                           ),
                         ),
@@ -206,13 +236,14 @@ class _PostBookScreenState extends State<PostBookScreen> {
                         author: _author.text.trim(),
                         condition: condition,
                         image: _image,
+                        webImage: _webImage,
                       );
                       if (context.mounted) {
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              _image != null
+                              (_image != null || _webImage != null)
                                   ? 'Book posted successfully!'
                                   : 'Book posted successfully! (Image upload skipped)',
                             ),
