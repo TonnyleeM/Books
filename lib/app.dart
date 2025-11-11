@@ -197,14 +197,22 @@ class MyApp extends StatelessWidget {
               email: auth.user?.email ?? '',
             ),
             '/add-book': (ctx) => const PostBookScreen(),
-            '/book-detail': (ctx) => BookDetailScreen(
-              book: ModalRoute.of(ctx)!.settings.arguments as Book,
-            ),
+            '/book-detail': (ctx) {
+              final args = ModalRoute.of(ctx)?.settings.arguments;
+              if (args is Book) {
+                return BookDetailScreen(book: args);
+              }
+              return const MainNavigationScreen();
+            },
             '/chat': (ctx) => const ChatScreen(),
             '/browse': (ctx) => const MainNavigationScreen(),
-            '/swap-selection': (ctx) => SwapSelectionScreen(
-              targetBook: ModalRoute.of(ctx)!.settings.arguments as Book,
-            ),
+            '/swap-selection': (ctx) {
+              final args = ModalRoute.of(ctx)?.settings.arguments;
+              if (args is Book) {
+                return SwapSelectionScreen(targetBook: args);
+              }
+              return const MainNavigationScreen();
+            },
           },
         );
       }),

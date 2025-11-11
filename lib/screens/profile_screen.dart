@@ -164,6 +164,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                       // Settings Options
                       _buildSettingsSection(theme, auth),
                       
+                      // Logout Button
+                      _buildLogoutButton(theme, auth),
+                      
                       // About Section
                       _buildAboutSection(theme),
                       
@@ -234,17 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             },
             theme: theme,
           ),
-          const Divider(height: 1),
-          _buildSettingsTile(
-            icon: Icons.logout_rounded,
-            title: 'Sign Out',
-            subtitle: 'Sign out of your account',
-            onTap: () {
-              _showSignOutDialog(auth);
-            },
-            theme: theme,
-            textColor: theme.colorScheme.error,
-          ),
+
         ],
       ),
     );
@@ -352,6 +345,26 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    );
+  }
+
+  Widget _buildLogoutButton(ThemeData theme, AuthProvider auth) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _showSignOutDialog(auth),
+        icon: const Icon(Icons.logout_rounded),
+        label: const Text('Sign Out'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.error,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
     );
   }
 

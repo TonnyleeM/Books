@@ -276,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 2.2,
+      childAspectRatio: 1.8,
       children: [
         _buildStatCard('My Books', '$bookCount', Icons.library_books_rounded, Colors.blue),
         _buildStatCard('Reading', '2', Icons.menu_book_rounded, Colors.green),
@@ -288,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -305,29 +305,30 @@ class _DashboardScreenState extends State<DashboardScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 16),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 8),
+          const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
                 title,
                 style: TextStyle(
                   color: Colors.grey.shade600,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,

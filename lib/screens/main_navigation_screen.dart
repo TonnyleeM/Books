@@ -114,7 +114,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         ),
         child: SafeArea(
           child: Container(
-            height: 70,
+            height: 65,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -152,12 +152,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                           Text(
                             tab.label,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                               color: isSelected
                                   ? Theme.of(context).colorScheme.primary
                                   : Colors.grey.shade600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
