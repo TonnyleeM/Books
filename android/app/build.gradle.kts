@@ -11,7 +11,6 @@ plugins {
 android {
     namespace = "com.example.book_swap"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

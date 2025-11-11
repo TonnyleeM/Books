@@ -593,7 +593,6 @@ class _SwapOptionsSheet extends StatefulWidget {
 
 class _SwapOptionsSheetState extends State<_SwapOptionsSheet> {
   final _firestore = FirestoreService();
-  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -760,7 +759,6 @@ class _SwapOptionsSheetState extends State<_SwapOptionsSheet> {
   }
 
   Future<void> _handleAccept(Map<String, dynamic> offer) async {
-    setState(() => _isLoading = true);
     try {
       await _firestore.acceptSwapOffer(offer['id'], offer['bookId']);
       if (mounted) {
@@ -781,13 +779,10 @@ class _SwapOptionsSheetState extends State<_SwapOptionsSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleDecline(Map<String, dynamic> offer) async {
-    setState(() => _isLoading = true);
     try {
       await _firestore.declineSwapOffer(offer['id'], offer['bookId']);
       if (mounted) {
@@ -808,8 +803,6 @@ class _SwapOptionsSheetState extends State<_SwapOptionsSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

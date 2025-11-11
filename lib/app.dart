@@ -44,11 +44,9 @@ class MyApp extends StatelessWidget {
               secondaryContainer: Color(0xFFE0E7FF), // Light Indigo
               tertiary: Color(0xFF10B981), // Emerald
               surface: Color(0xFFFAFAFA), // Light Gray
-              background: Color(0xFFFFFFFF), // Pure White
               onPrimary: Colors.white,
               onSecondary: Colors.white,
               onSurface: Color(0xFF1F2937), // Dark Gray
-              onBackground: Color(0xFF111827), // Very Dark Gray
               error: Color(0xFFEF4444), // Red
               outline: Color(0xFFE5E7EB),
             ),
@@ -196,6 +194,7 @@ class MyApp extends StatelessWidget {
               book: ModalRoute.of(ctx)!.settings.arguments as Book,
             ),
             '/chat': (ctx) => const ChatScreen(),
+            '/browse': (ctx) => const MainNavigationScreen(),
           },
         );
       }),

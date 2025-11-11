@@ -12,8 +12,9 @@ void main() async {
     );
 
     await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug, // change for production
-      // webRecaptchaSiteKey: 'REPLACE_WITH_WEB_KEY_IF_WEB_ONLY',
+      webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.appAttest,
     );
   } catch (e) {
     // Handle initialization error silently
