@@ -270,25 +270,31 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildStatsGrid(int bookCount) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.8,
-      children: [
-        _buildStatCard('My Books', '$bookCount', Icons.library_books_rounded, Colors.blue),
-        _buildStatCard('Reading', '2', Icons.menu_book_rounded, Colors.green),
-        _buildStatCard('Wishlist', '8', Icons.favorite_rounded, Colors.red),
-        _buildStatCard('Completed', '15', Icons.check_circle_rounded, Colors.purple),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - 12) / 2;
+        final cardHeight = cardWidth * 0.6;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: cardWidth / cardHeight,
+          children: [
+            _buildStatCard('My Books', '$bookCount', Icons.library_books_rounded, Colors.blue),
+            _buildStatCard('Reading', '2', Icons.menu_book_rounded, Colors.green),
+            _buildStatCard('Wishlist', '8', Icons.favorite_rounded, Colors.red),
+            _buildStatCard('Completed', '15', Icons.check_circle_rounded, Colors.purple),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -305,34 +311,36 @@ class _DashboardScreenState extends State<DashboardScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 16),
           ),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+              FittedBox(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              FittedBox(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

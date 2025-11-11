@@ -6,6 +6,7 @@ class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<void> saveUserName(String uid, String name) async {
+    if (uid.isEmpty || name.isEmpty) return;
     await _db.collection('users').doc(uid).set({
       'name': name,
       'createdAt': FieldValue.serverTimestamp(),
@@ -13,8 +14,13 @@ class FirestoreService {
   }
 
   Future<String?> getUserName(String uid) async {
-    final doc = await _db.collection('users').doc(uid).get();
-    return doc.data()?['name'] as String?;
+    if (uid.isEmpty) return null;
+    try {
+      final doc = await _db.collection('users').doc(uid).get();
+      return doc.data()?['name'] as String?;
+    } catch (e) {
+      return null;
+    }
   }
 
   Stream<List<Book>> streamAllBooks() {
@@ -354,6 +360,7 @@ class FirestoreService {
 
   // Saved books functionality
   Future<void> saveBook(String userId, String bookId) async {
+    if (userId.isEmpty || bookId.isEmpty) return;
     await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).set({
       'bookId': bookId,
       'savedAt': FieldValue.serverTimestamp(),
@@ -361,40 +368,53 @@ class FirestoreService {
   }
 
   Future<void> unsaveBook(String userId, String bookId) async {
+    if (userId.isEmpty || bookId.isEmpty) return;
     await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).delete();
   }
 
   Future<bool> isBookSaved(String userId, String bookId) async {
-    final doc = await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).get();
-    return doc.exists;
+    if (userId.isEmpty || bookId.isEmpty) return false;
+    try {
+      final doc = await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).get();
+      return doc.exists;
+    } catch (e) {
+      return false;
+    }
   }
 
   Stream<List<Book>> streamSavedBooks(String userId) {
+    if (userId.isEmpty) {
+      return Stream.value(<Book>[]);
+    }
     return _db
         .collection('users')
         .doc(userId)
         .collection('savedBooks')
         .snapshots()
         .asyncMap((savedSnapshot) async {
-          final savedBookIds = savedSnapshot.docs.map((doc) => doc.data()['bookId'] as String).toList();
-          
-          if (savedBookIds.isEmpty) {
+          try {
+            final savedBookIds = savedSnapshot.docs.map((doc) => doc.data()['bookId'] as String).where((id) => id.isNotEmpty).toList();
+            
+            if (savedBookIds.isEmpty) {
+              return <Book>[];
+            }
+            
+            final books = <Book>[];
+            for (final bookId in savedBookIds) {
+              try {
+                final bookDoc = await _db.collection('books').doc(bookId).get();
+                if (bookDoc.exists) {
+                  books.add(Book.fromDoc(bookDoc));
+                }
+              } catch (e) {
+                // Skip invalid books
+              }
+            }
+            
+            return books;
+          } catch (e) {
             return <Book>[];
           }
-          
-          final books = <Book>[];
-          for (final bookId in savedBookIds) {
-            try {
-              final bookDoc = await _db.collection('books').doc(bookId).get();
-              if (bookDoc.exists) {
-                books.add(Book.fromDoc(bookDoc));
-              }
-            } catch (e) {
-              // Skip invalid books
-            }
-          }
-          
-          return books;
         });
   }
 

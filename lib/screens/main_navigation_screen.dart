@@ -100,7 +100,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         ],
       ),
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -114,8 +114,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         ),
         child: SafeArea(
           child: Container(
-            height: 65,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: _tabs.asMap().entries.map((entry) {
@@ -127,32 +127,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   child: GestureDetector(
                     onTap: () => _onTabTapped(index),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? Theme.of(context).colorScheme.primary
                                   : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
                               tab.icon,
                               color: isSelected
                                   ? Colors.white
                                   : Colors.grey.shade600,
-                              size: 22,
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             tab.label,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                               color: isSelected
                                   ? Theme.of(context).colorScheme.primary

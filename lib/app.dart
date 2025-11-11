@@ -41,6 +41,27 @@ class MyApp extends StatelessWidget {
               child: child!,
             );
           },
+          onGenerateRoute: (settings) {
+            try {
+              switch (settings.name) {
+                case '/book-detail':
+                  final args = settings.arguments;
+                  if (args is Book) {
+                    return MaterialPageRoute(builder: (_) => BookDetailScreen(book: args));
+                  }
+                  break;
+                case '/swap-selection':
+                  final args = settings.arguments;
+                  if (args is Book) {
+                    return MaterialPageRoute(builder: (_) => SwapSelectionScreen(targetBook: args));
+                  }
+                  break;
+              }
+              return null;
+            } catch (e) {
+              return MaterialPageRoute(builder: (_) => const MainNavigationScreen());
+            }
+          },
           theme: ThemeData(
             useMaterial3: true,
             fontFamily: 'Inter',
