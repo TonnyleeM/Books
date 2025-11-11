@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/book.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
@@ -9,6 +10,7 @@ import 'package:uuid/uuid.dart';
 class BookProvider extends ChangeNotifier {
   final FirestoreService _db = FirestoreService();
   final StorageService _storage = StorageService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<List<Book>> allBooks() => _db.streamAllBooks();
 
@@ -22,9 +24,18 @@ class BookProvider extends ChangeNotifier {
     File? image,
     Uint8List? webImage,
   }) async {
-    // Validate required fields
-    if (ownerId.isEmpty || title.isEmpty || author.isEmpty) {
-      throw Exception('Missing required fields');
+    // Validate required fields more thoroughly
+    if (ownerId.trim().isEmpty) {
+      throw Exception('Owner ID cannot be empty');
+    }
+    if (title.trim().isEmpty) {
+      throw Exception('Title cannot be empty');
+    }
+    if (author.trim().isEmpty) {
+      throw Exception('Author cannot be empty');
+    }
+    if (condition.trim().isEmpty) {
+      throw Exception('Condition cannot be empty');
     }
     
     final id = const Uuid().v4();
@@ -38,34 +49,27 @@ class BookProvider extends ChangeNotifier {
         } else if (image != null) {
           imageUrl = await _storage.uploadBookImage(image, id);
         }
-        // If imageUrl is still empty, something went wrong but we'll continue without image
-        if (imageUrl.isEmpty) {
-          imageUrl = '';
-        }
       } catch (e) {
         // If image upload fails, continue without image
-        // The error message should indicate what happened
         imageUrl = '';
-        // Don't throw - allow book to be created without image
       }
     }
     
-    final book = Book(
-      id: id,
-      ownerId: ownerId,
-      title: title,
-      author: author,
-      condition: condition,
-      imageUrl: imageUrl,
-      status: 'available',
-    );
+    // Ensure all values are non-null
+    final bookData = {
+      'ownerId': ownerId.trim(),
+      'title': title.trim(),
+      'author': author.trim(),
+      'condition': condition.trim(),
+      'imageUrl': imageUrl,
+      'status': 'available',
+    };
     
     try {
-      await _db.createBook(book);
+      await _db.collection('books').doc(id).set(bookData);
     } catch (e) {
-      // Re-throw Firestore errors so UI can show them
       print('Error creating book: $e');
-      print('Book data: ${book.toMap()}');
+      print('Book data: $bookData');
       throw Exception('Failed to create book: $e');
     }
   }
