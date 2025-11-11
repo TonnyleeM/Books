@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/book.dart';
 import '../services/firestore_service.dart';
 import '../services/storage_service.dart';
@@ -10,7 +9,6 @@ import 'package:uuid/uuid.dart';
 class BookProvider extends ChangeNotifier {
   final FirestoreService _db = FirestoreService();
   final StorageService _storage = StorageService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<List<Book>> allBooks() => _db.streamAllBooks();
 
@@ -65,11 +63,21 @@ class BookProvider extends ChangeNotifier {
       'status': 'available',
     };
     
+    final book = Book(
+      id: id,
+      ownerId: ownerId.trim(),
+      title: title.trim(),
+      author: author.trim(),
+      condition: condition.trim(),
+      imageUrl: imageUrl,
+      status: 'available',
+    );
+    
     try {
-      await _db.collection('books').doc(id).set(bookData);
+      await _db.createBook(book);
     } catch (e) {
       print('Error creating book: $e');
-      print('Book data: $bookData');
+      print('Book data: ${book.toMap()}');
       throw Exception('Failed to create book: $e');
     }
   }
