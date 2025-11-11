@@ -22,46 +22,11 @@ class BookProvider extends ChangeNotifier {
     File? image,
     Uint8List? webImage,
   }) async {
-    // Validate required fields more thoroughly
-    if (ownerId.trim().isEmpty) {
-      throw Exception('Owner ID cannot be empty');
-    }
-    if (title.trim().isEmpty) {
-      throw Exception('Title cannot be empty');
-    }
-    if (author.trim().isEmpty) {
-      throw Exception('Author cannot be empty');
-    }
-    if (condition.trim().isEmpty) {
-      throw Exception('Condition cannot be empty');
+    if (ownerId.trim().isEmpty || title.trim().isEmpty || author.trim().isEmpty) {
+      throw Exception('Missing required fields');
     }
     
     final id = const Uuid().v4();
-    String imageUrl = '';
-    
-    // Upload image if provided
-    if (image != null || webImage != null) {
-      try {
-        if (webImage != null) {
-          imageUrl = await _storage.uploadWebImage(webImage, id);
-        } else if (image != null) {
-          imageUrl = await _storage.uploadBookImage(image, id);
-        }
-      } catch (e) {
-        // If image upload fails, continue without image
-        imageUrl = '';
-      }
-    }
-    
-    // Ensure all values are non-null
-    final bookData = {
-      'ownerId': ownerId.trim(),
-      'title': title.trim(),
-      'author': author.trim(),
-      'condition': condition.trim(),
-      'imageUrl': imageUrl,
-      'status': 'available',
-    };
     
     final book = Book(
       id: id,
@@ -69,17 +34,11 @@ class BookProvider extends ChangeNotifier {
       title: title.trim(),
       author: author.trim(),
       condition: condition.trim(),
-      imageUrl: imageUrl,
+      imageUrl: '',
       status: 'available',
     );
     
-    try {
-      await _db.createBook(book);
-    } catch (e) {
-      print('Error creating book: $e');
-      print('Book data: ${book.toMap()}');
-      throw Exception('Failed to create book: $e');
-    }
+    await _db.createBook(book);
   }
 
   Future<void> deleteBook(String id) async => await _db.deleteBook(id);
