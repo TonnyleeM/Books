@@ -45,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           return Transform.translate(
             offset: Offset(0, _slideAnimation.value),
             child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
               slivers: [
                 // Profile Header
                 SliverAppBar(
@@ -67,8 +68,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                       ),
                       child: SafeArea(
+                        bottom: false,
                         child: Padding(
-                          padding: const EdgeInsets.all(24.0),
+                          padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 40.0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -106,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ),
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 20),
                               
                               // Name
                               Text(
@@ -117,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               
                               // Email
                               Text(
@@ -127,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   fontSize: 16,
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 24),
                               
                               // Member Since
                               Container(

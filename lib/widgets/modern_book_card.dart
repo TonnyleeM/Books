@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/book.dart';
+import '../services/firestore_service.dart';
 
 class ModernBookCard extends StatelessWidget {
   final Book book;
@@ -112,13 +113,21 @@ class ModernBookCard extends StatelessWidget {
                           ),
                           if (showOwner) ...[
                             const SizedBox(height: 4),
-                            Text(
-                              'Owner: ${book.ownerId}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            FutureBuilder<String?>(
+                              future: _getUserName(book.ownerId),
+                              builder: (context, snapshot) {
+                                final ownerName = snapshot.data ?? 'User';
+                                return Text(
+                                  'Owner: $ownerName',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                );
+                              },
                             ),
                           ],
                         ],
@@ -153,19 +162,19 @@ class ModernBookCard extends StatelessWidget {
                           
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.tertiary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
+                              color: _getStatusColor(book.status, theme).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               book.status.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: theme.colorScheme.tertiary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _getStatusColor(book.status, theme),
                               ),
                             ),
                           ),
@@ -214,16 +223,38 @@ class ModernBookCard extends StatelessWidget {
 
   Color _getConditionColor(String condition, ThemeData theme) {
     switch (condition.toLowerCase()) {
-      case 'excellent':
+      case 'new':
         return Colors.green;
-      case 'good':
+      case 'like new':
         return Colors.blue;
-      case 'fair':
+      case 'good':
         return Colors.orange;
-      case 'poor':
-        return Colors.red;
+      case 'used':
+        return Colors.grey;
       default:
         return theme.colorScheme.primary;
+    }
+  }
+
+  Color _getStatusColor(String status, ThemeData theme) {
+    switch (status.toLowerCase()) {
+      case 'available':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'swapped':
+        return Colors.blue;
+      default:
+        return theme.colorScheme.primary;
+    }
+  }
+
+  Future<String?> _getUserName(String uid) async {
+    try {
+      final firestore = FirestoreService();
+      return await firestore.getUserName(uid);
+    } catch (e) {
+      return null;
     }
   }
 }

@@ -34,8 +34,32 @@
 
   <title>book_swap</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
 </head>
 <body>
+  <!-- reCAPTCHA container -->
+  <div id="recaptcha-container"></div>
+  
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB08zuwDzlqXuxPF0yagWeVpYGM4iKq-Wk",
+      authDomain: "bookswap-d71af.firebaseapp.com",
+      projectId: "bookswap-d71af",
+      storageBucket: "bookswap-d71af.firebasestorage.app",
+      messagingSenderId: "872832157007",
+      appId: "1:872832157007:web:60501ae96033ba6335b13a"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

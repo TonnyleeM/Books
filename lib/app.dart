@@ -10,6 +10,7 @@ import 'screens/post_book_screen.dart';
 import 'screens/book_detail_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/swap_selection_screen.dart';
+import 'screens/saved_books_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -234,6 +235,7 @@ class MyApp extends StatelessWidget {
               }
               return const MainNavigationScreen();
             },
+            '/saved-books': (ctx) => const SavedBooksScreen(),
           },
         );
       }),

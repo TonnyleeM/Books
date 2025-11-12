@@ -172,20 +172,31 @@ class FirestoreService {
     required String senderId,
     required String text,
   }) async {
+    if (senderId.isEmpty || text.trim().isEmpty) return;
+    
     try {
-      // Add message to subcollection
-      await _db.collection('chats').doc(chatId).collection('messages').add({
+      // First ensure the chat document exists
+      final chatRef = _db.collection('chats').doc(chatId);
+      final chatDoc = await chatRef.get();
+      
+      if (!chatDoc.exists) {
+        throw Exception('Chat does not exist');
+      }
+      
+      // Add the message
+      await chatRef.collection('messages').add({
         'senderId': senderId,
-        'text': text,
+        'text': text.trim(),
         'timestamp': FieldValue.serverTimestamp(),
       });
       
-      // Update chat last message
-      await _db.collection('chats').doc(chatId).update({
-        'lastMessage': text,
+      // Update chat metadata
+      await chatRef.update({
+        'lastMessage': text.trim(),
         'lastMessageTime': FieldValue.serverTimestamp(),
       });
     } catch (e) {
+      print('Send message error: $e');
       throw Exception('Failed to send message: $e');
     }
   }
@@ -195,7 +206,7 @@ class FirestoreService {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .orderBy('timestamp', descending: true)
+        .orderBy('timestamp', descending: false)
         .snapshots()
         .map((snap) {
           try {
@@ -304,17 +315,25 @@ class FirestoreService {
     required String userId2,
     required String bookId,
   }) async {
-    final chatRef = _db.collection('chats').doc(chatId);
-    final chatDoc = await chatRef.get();
+    if (userId1.isEmpty || userId2.isEmpty) {
+      throw Exception('Invalid user IDs');
+    }
     
-    if (!chatDoc.exists) {
-      await chatRef.set({
-        'participants': [userId1, userId2],
-        'lastMessage': 'Chat started',
-        'lastMessageTime': FieldValue.serverTimestamp(),
-        'bookId': bookId,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+    try {
+      final chatRef = _db.collection('chats').doc(chatId);
+      final chatDoc = await chatRef.get();
+      
+      if (!chatDoc.exists) {
+        await chatRef.set({
+          'participants': [userId1, userId2],
+          'lastMessage': 'Chat started',
+          'lastMessageTime': FieldValue.serverTimestamp(),
+          'bookId': bookId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to create chat: $e');
     }
   }
 
@@ -361,15 +380,23 @@ class FirestoreService {
   // Saved books functionality
   Future<void> saveBook(String userId, String bookId) async {
     if (userId.isEmpty || bookId.isEmpty) return;
-    await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).set({
-      'bookId': bookId,
-      'savedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).set({
+        'bookId': bookId,
+        'savedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Save book error: $e');
+    }
   }
 
   Future<void> unsaveBook(String userId, String bookId) async {
     if (userId.isEmpty || bookId.isEmpty) return;
-    await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).delete();
+    try {
+      await _db.collection('users').doc(userId).collection('savedBooks').doc(bookId).delete();
+    } catch (e) {
+      print('Unsave book error: $e');
+    }
   }
 
   Future<bool> isBookSaved(String userId, String bookId) async {
@@ -393,7 +420,7 @@ class FirestoreService {
         .snapshots()
         .asyncMap((savedSnapshot) async {
           try {
-            final savedBookIds = savedSnapshot.docs.map((doc) => doc.data()['bookId'] as String).where((id) => id.isNotEmpty).toList();
+            final savedBookIds = savedSnapshot.docs.map((doc) => doc.id).where((id) => id.isNotEmpty).toList();
             
             if (savedBookIds.isEmpty) {
               return <Book>[];

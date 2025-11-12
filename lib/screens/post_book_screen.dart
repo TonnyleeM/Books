@@ -251,7 +251,7 @@ class _PostBookScreenState extends State<PostBookScreen> {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Error posting book: $e'),
+                            content: Text('Failed to post book. Please try again.'),
                             backgroundColor: Colors.red,
                           ),
                         );

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/book.dart';
-import '../widgets/modern_book_card.dart';
+import '../widgets/simple_book_card.dart';
 
 class ExploreBooksScreen extends StatefulWidget {
   const ExploreBooksScreen({super.key});
@@ -328,9 +328,8 @@ class _ExploreBooksScreenState extends State<ExploreBooksScreen>
                       final book = filteredBooks[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
-                        child: ModernBookCard(
+                        child: SimpleBookCard(
                           book: book,
-                          showOwner: true,
                           onTap: () {
                             Navigator.pushNamed(
                               context,

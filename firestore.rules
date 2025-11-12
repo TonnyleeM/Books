@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own user document and read others
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can read/write their own saved books
+      match /savedBooks/{bookId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Books - anyone can read, only owner can write
+    match /books/{bookId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (request.auth.uid == resource.data.ownerId || request.auth.uid == request.resource.data.ownerId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
+    }
+    
+    // Chats - simplified permissions for better compatibility
+    match /chats/{chatId} {
+      allow read, write, create: if request.auth != null;
+      
+      match /messages/{messageId} {
+        allow read, write, create: if request.auth != null;
+      }
+    }
+    
+    // Swap requests
+    match /swapRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+    
+    // Swap offers
+    match /swaps/{swapId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+    
+    // Saved books collection (alternative approach)
+    match /savedBooks/{docId} {
+      allow read, write: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+    
+    // Swap requests for tracking completed swaps
+    match /swapRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+  }
+}

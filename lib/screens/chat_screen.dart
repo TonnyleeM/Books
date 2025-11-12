@@ -77,8 +77,41 @@ class _ChatScreenState extends State<ChatScreen> {
                       }
                       
                       if (snapshot.hasError) {
+                        print('Chat stream error: ${snapshot.error}');
                         return Center(
-                          child: Text('Error: ${snapshot.error}'),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Error loading chats',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Please check your connection and try again',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const ChatScreen()),
+                                  );
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
                         );
                       }
                       
@@ -434,11 +467,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         text: text,
       );
       
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to send message: $e')),
@@ -489,8 +524,25 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 }
                 
                 if (snapshot.hasError) {
+                  print('Messages error: ${snapshot.error}');
                   return Center(
-                    child: Text('Error: ${snapshot.error}'),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Error loading messages'),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Go Back'),
+                        ),
+                      ],
+                    ),
                   );
                 }
                 

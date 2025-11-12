@@ -15,19 +15,32 @@ class SavedBooksScreen extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context);
     final bookProvider = Provider.of<BookProvider>(context);
     
+    if (auth.user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Saved Books'),
+          elevation: 0,
+        ),
+        body: const Center(
+          child: Text('Please sign in to view saved books'),
+        ),
+      );
+    }
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Saved Books'),
         elevation: 0,
       ),
       body: StreamBuilder<List<Book>>(
-        stream: bookProvider.savedBooks(auth.user?.uid ?? ''),
+        stream: bookProvider.savedBooks(auth.user!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
+            print('Saved books error: ${snapshot.error}');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -45,12 +58,23 @@ class SavedBooksScreen extends StatelessWidget {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Trigger rebuild
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SavedBooksScreen()),
+                      );
+                    },
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
             );
           }
 
-          final savedBooks = snapshot.data ?? [];
+          final savedBooks = snapshot.data ?? <Book>[];
 
           if (savedBooks.isEmpty) {
             return Center(

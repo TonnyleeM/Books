@@ -14,11 +14,29 @@ class Message {
   });
 
   factory Message.fromMap(Map<String, dynamic> map, String id) {
+    DateTime timestamp;
+    try {
+      final timestampData = map['timestamp'];
+      if (timestampData != null) {
+        if (timestampData.runtimeType.toString().contains('Timestamp')) {
+          timestamp = timestampData.toDate();
+        } else if (timestampData is int) {
+          timestamp = DateTime.fromMillisecondsSinceEpoch(timestampData);
+        } else {
+          timestamp = DateTime.now();
+        }
+      } else {
+        timestamp = DateTime.now();
+      }
+    } catch (e) {
+      timestamp = DateTime.now();
+    }
+    
     return Message(
       id: id,
       senderId: map['senderId'] ?? '',
       text: map['text'] ?? '',
-      timestamp: map['timestamp']?.toDate() ?? DateTime.now(),
+      timestamp: timestamp,
       isRead: map['isRead'] ?? false,
     );
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'explore_books_screen.dart';
 import 'my_library_screen.dart';
-import 'community_screen.dart';
+import 'notifications_screen.dart';
 import 'profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -35,9 +35,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       screen: const MyLibraryScreen(),
     ),
     NavTab(
-      icon: Icons.forum_rounded,
-      label: 'Connect',
-      screen: const CommunityScreen(),
+      icon: Icons.notifications_rounded,
+      label: 'Notifications',
+      screen: const NotificationsScreen(),
     ),
     NavTab(
       icon: Icons.account_circle_rounded,

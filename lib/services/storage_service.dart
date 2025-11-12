@@ -60,62 +60,26 @@ class StorageService {
   }
 
   Future<String> uploadBookImageWeb(Uint8List imageBytes, String bookId) async {
-    return await uploadWebImage(imageBytes, bookId);
+    try {
+      // Compress image first
+      final compressedBytes = await _compressWebImage(imageBytes);
+      final base64String = base64Encode(compressedBytes);
+      return 'data:image/jpeg;base64,$base64String';
+    } catch (e) {
+      // Return empty string if compression fails
+      return '';
+    }
   }
 
   Future<String> uploadBookImage(File file, String bookId) async {
-    // Check if file exists
-    if (!await file.exists()) {
-      throw Exception('Image file does not exist');
-    }
-
-    // Try Firebase Storage first
     try {
-      // Create reference with proper path structure
-      final ref = _storage.ref().child('book_images').child('$bookId.jpg');
-      
-      // Upload file with metadata
-      final uploadTask = ref.putFile(
-        file,
-        SettableMetadata(
-          contentType: 'image/jpeg',
-          cacheControl: 'public, max-age=31536000',
-        ),
-      );
-
-      // Wait for upload to complete
-      final snapshot = await uploadTask;
-      
-      // Get download URL
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } on FirebaseException catch (e) {
-      // If Firebase Storage fails, fall back to compressed base64
-      try {
-        final compressedBytes = await _compressImage(file);
-        if (compressedBytes.length > maxBase64Size) {
-          // Image still too large even after compression - skip it
-          throw Exception('Image too large even after compression. Skipping image.');
-        }
-        final base64String = base64Encode(compressedBytes);
-        // Return base64 data URL
-        return 'data:image/jpeg;base64,$base64String';
-      } catch (base64Error) {
-        // If base64 also fails, throw the original Firebase error
-        throw Exception('Firebase Storage failed: ${e.message}. Image compression also failed: $base64Error');
-      }
+      // Compress image first to avoid large uploads
+      final compressedBytes = await _compressImage(file);
+      final base64String = base64Encode(compressedBytes);
+      return 'data:image/jpeg;base64,$base64String';
     } catch (e) {
-      // Any other error - try compressed base64 fallback
-      try {
-        final compressedBytes = await _compressImage(file);
-        if (compressedBytes.length > maxBase64Size) {
-          throw Exception('Image too large even after compression. Skipping image.');
-        }
-        final base64String = base64Encode(compressedBytes);
-        return 'data:image/jpeg;base64,$base64String';
-      } catch (base64Error) {
-        throw Exception('Failed to upload image: $e. Image compression also failed: $base64Error');
-      }
+      // Return empty string if compression fails
+      return '';
     }
   }
 

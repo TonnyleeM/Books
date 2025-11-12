@@ -4,7 +4,6 @@ import '../providers/book_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/book.dart';
 import '../widgets/modern_book_card.dart';
-import 'swap_selection_screen.dart';
 
 class MyLibraryScreen extends StatefulWidget {
   const MyLibraryScreen({super.key});
@@ -101,15 +100,30 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
                                   ],
                                 ),
                               ),
-                              FloatingActionButton(
-                                mini: true,
-                                heroTag: "add_book_fab",
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/add-book');
-                                },
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                foregroundColor: Colors.white,
-                                child: const Icon(Icons.add_rounded),
+                              Row(
+                                children: [
+                                  FloatingActionButton(
+                                    mini: true,
+                                    heroTag: "saved_books_fab",
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/saved-books');
+                                    },
+                                    backgroundColor: Colors.white.withOpacity(0.2),
+                                    foregroundColor: Colors.white,
+                                    child: const Icon(Icons.bookmark_rounded),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FloatingActionButton(
+                                    mini: true,
+                                    heroTag: "add_book_fab",
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/add-book');
+                                    },
+                                    backgroundColor: Colors.white.withOpacity(0.2),
+                                    foregroundColor: Colors.white,
+                                    child: const Icon(Icons.add_rounded),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -131,7 +145,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
                 ),
                 tabs: const [
                   Tab(text: 'My Books'),
-                  Tab(text: 'Saved'),
+                  Tab(text: '💾 Saved'),
                   Tab(text: 'Pending'),
                   Tab(text: 'Swapped'),
                   Tab(text: 'Swaps'),
@@ -146,7 +160,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
             _buildMyBooksList(auth, bookProvider, theme),
             _buildSavedBooksList(auth, bookProvider, theme),
             _buildBooksList('pending', auth, bookProvider, theme),
-            _buildBooksList('swapped', auth, bookProvider, theme),
+            _buildSwappedBooksList(auth, bookProvider, theme),
             _buildSwapRequestsList(auth, bookProvider, theme),
           ],
         ),
@@ -424,6 +438,90 @@ class _MyLibraryScreenState extends State<MyLibraryScreen>
         );
       },
     );
+  }
+
+  Widget _buildSwappedBooksList(AuthProvider auth, BookProvider bookProvider, ThemeData theme) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: bookProvider.completedSwaps(auth.user?.uid ?? ''),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final swaps = snapshot.data ?? [];
+        if (swaps.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.swap_horiz, size: 80, color: theme.colorScheme.primary.withOpacity(0.5)),
+                const SizedBox(height: 24),
+                Text('No Completed Swaps', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                const SizedBox(height: 8),
+                Text('Your completed book swaps\nwill be shown here', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)), textAlign: TextAlign.center),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: swaps.length,
+          itemBuilder: (context, index) {
+            final swap = swaps[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Swap Completed', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Book swap completed successfully', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                    const SizedBox(height: 8),
+                    Text('Completed: ${_formatSwapDate(swap['completedAt'])}', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatSwapDate(dynamic timestamp) {
+    if (timestamp == null) return 'Recently';
+    try {
+      DateTime date;
+      if (timestamp.runtimeType.toString().contains('Timestamp')) {
+        date = timestamp.toDate();
+      } else if (timestamp is DateTime) {
+        date = timestamp;
+      } else {
+        return 'Recently';
+      }
+      
+      final now = DateTime.now();
+      final difference = now.difference(date);
+      
+      if (difference.inDays > 0) {
+        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      } else {
+        return 'Recently';
+      }
+    } catch (e) {
+      return 'Recently';
+    }
   }
 
   Widget _buildSwapRequestsList(AuthProvider auth, BookProvider bookProvider, ThemeData theme) {

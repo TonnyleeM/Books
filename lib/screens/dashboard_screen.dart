@@ -359,17 +359,17 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             Expanded(
               child: _buildActionButton(
-                'Discover Books',
-                Icons.explore_rounded,
-                () {},
+                'Saved Books',
+                Icons.bookmark_rounded,
+                () => Navigator.pushNamed(context, '/saved-books'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
-                'Join Community',
-                Icons.people_rounded,
-                () {},
+                'Discover Books',
+                Icons.explore_rounded,
+                () => Navigator.pushNamed(context, '/browse'),
               ),
             ),
           ],
